@@ -1,0 +1,84 @@
+sp_tuples * load_tuples(char* input_file)
+{
+  FILE *file = fopen(input_file, "r");
+
+  sp_tuples* start = (sp_tuples*)malloc(sizeof(sp_tuples));
+
+  int row, col;
+  double value = 0;
+  char endline;
+  fscanf(file, "%d %d%c", &row, &col, &endline);
+  start->m = row;
+  start->n = col;
+  start->tuples_head = NULL;
+
+  int countnz = 0; // count non-zero entries as we loop
+
+  sp_tuples_node* head = (sp_tuples_node*)malloc(sizeof(sp_tuples_node));
+
+  while (value == 0){
+    fscanf(file, "%d %d %lf%c", &row, &col, &value, &endline); //got rid of &endline
+    if (value != 0){
+      start->tuples_head = head;
+      head->value = value;
+      head->row = row;
+      head->col = col;
+      head->next = NULL;
+      countnz++;
+    }
+  }
+
+  while (!feof(file)){
+    fscanf(file, "%d %d %lf%c", &row, &col, &value, &endline);
+    if (value != 0){
+      sp_tuples_node* new_node = (sp_tuples_node*)malloc(sizeof(sp_tuples_node));
+      sp_tuples_node* compare_node = start->tuples_head;
+      sp_tuples_node** prev_node = &(start->tuples_head);
+      new_node->value = value;
+      new_node->row = row;
+      new_node->col = col;
+      new_node->next = NULL;
+
+      int i;
+      for(i = 0; i < countnz; i++){
+        int compare_row = compare_node->row;
+        int compare_col = compare_node->col;
+
+        if (row < compare_row){
+          new_node->next = *prev_node;
+          *prev_node = new_node;
+          countnz++;
+          break;
+        }
+        else if(row == compare_row && col < compare_col){
+          new_node->next = *prev_node;
+          *prev_node = new_node;
+          countnz++;
+          break;
+        }
+        else if(row == compare_row && col == compare_col){
+          *prev_node = new_node;
+          new_node->next = compare_node->next;
+          free(compare_node);
+          break;
+        }
+        else{
+          *prev_node = compare_node;
+          compare_node = compare_node->next;
+        }
+        if(i == countnz-1){
+          compare_node->next = new_node;
+          countnz++;
+          break;
+        }
+      }
+    }
+  }
+
+  fclose(file);
+
+  //order the linked list
+  start->nz = countnz;
+
+  return start;
+}
